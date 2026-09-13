@@ -1,0 +1,157 @@
+### Create a draft Coagulant formula (v1)
+POST http://localhost:8080/api/formulas
+Content-Type: application/json
+
+{
+  "chemicalType": "COAGULANT",
+  "baseDose": 2.0,
+  "minDose": 0.5,
+  "maxDose": 10.0,
+  "createdBy": "wes",
+  "notes": "Initial coagulant curve",
+  "inputs": [
+    { "readingTag": "QC1_Turbidity", "coefficient": 0.15 },
+    { "readingTag": "InfluentFlowRate", "coefficient": 0.02 }
+  ]
+}
+
+### List all formulas
+GET http://localhost:8080/api/formulas
+
+### Get one formula by id (replace 1 with the id returned above)
+GET http://localhost:8080/api/formulas/1
+
+### Approve it (replace 1 with the id)
+PUT http://localhost:8080/api/formulas/1/approve
+Content-Type: application/json
+
+{
+  "approvedBy": "wes"
+}
+
+### Activate it (replace 1 with the id)
+PUT http://localhost:8080/api/formulas/1/activate
+
+### Fetch the active formula for a chemical type -- this is what Ignition will call
+GET http://localhost:8080/api/formulas/active/COAGULANT
+
+### Try activating a DRAFT directly -- should fail with 409 Conflict
+# (create a second draft first, then try to activate it without approving)
+
+### Push a process reading (simulating Ignition)
+POST http://localhost:8080/api/readings
+Content-Type: application/json
+
+{
+  "tagName": "QC1_Turbidity",
+  "value": 3.42
+}
+
+### List readings
+GET http://localhost:8080/api/readings
+
+### Push an alarm event (simulating Ignition)
+POST http://localhost:8080/api/alarms
+Content-Type: application/json
+
+{
+  "alarmName": "Chlorine Breakthrough",
+  "priority": "High",
+  "state": "Active",
+  "sourcePath": "WaterQuality/QC2_ChlorineResidual"
+}
+
+### List alarms
+GET http://localhost:8080/api/alarms
+
+### ============================================================
+### Placeholder formulas for the remaining 4 pumps -- arbitrary
+### demo coefficients (same spirit as the Coagulant one), just
+### enough to exercise the full 5-pump calc loop end to end.
+### Adjust readingTag/coefficient values however you'd like.
+### Run each POST, note the id it returns, then approve + activate
+### it the same way you did for Coagulant.
+### ============================================================
+
+### SH formula (baseline InfluentFlowRate, trim QC2_ChlorineResidual)
+POST http://localhost:8080/api/formulas
+Content-Type: application/json
+
+{
+  "chemicalType": "SH",
+  "baseDose": 1.5,
+  "minDose": 0.3,
+  "maxDose": 8.0,
+  "createdBy": "wes",
+  "notes": "Placeholder SH curve",
+  "inputs": [
+    { "readingTag": "InfluentFlowRate", "coefficient": 0.01 },
+    { "readingTag": "QC2_ChlorineResidual", "coefficient": 0.5 }
+  ]
+}
+
+### SBS formula (baseline FiltrateFlowRate, trim QC2_ChlorineResidual)
+POST http://localhost:8080/api/formulas
+Content-Type: application/json
+
+{
+  "chemicalType": "SBS",
+  "baseDose": 1.0,
+  "minDose": 0.2,
+  "maxDose": 6.0,
+  "createdBy": "wes",
+  "notes": "Placeholder SBS curve",
+  "inputs": [
+    { "readingTag": "FiltrateFlowRate", "coefficient": 0.01 },
+    { "readingTag": "QC2_ChlorineResidual", "coefficient": 1.2 }
+  ]
+}
+
+### Antiscalant formula (Hardness, InfluentFlowRate, InfluentTemperature)
+POST http://localhost:8080/api/formulas
+Content-Type: application/json
+
+{
+  "chemicalType": "ANTISCALANT",
+  "baseDose": 0.8,
+  "minDose": 0.2,
+  "maxDose": 5.0,
+  "createdBy": "wes",
+  "notes": "Placeholder Antiscalant curve",
+  "inputs": [
+    { "readingTag": "Hardness", "coefficient": 0.02 },
+    { "readingTag": "InfluentFlowRate", "coefficient": 0.005 },
+    { "readingTag": "InfluentTemperature", "coefficient": 0.01 }
+  ]
+}
+
+### Caustic formula (baseline ROFeedFlowRate, trim ROFeed_pH)
+POST http://localhost:8080/api/formulas
+Content-Type: application/json
+
+{
+  "chemicalType": "CAUSTIC",
+  "baseDose": 1.2,
+  "minDose": 0.3,
+  "maxDose": 7.0,
+  "createdBy": "wes",
+  "notes": "Placeholder Caustic curve",
+  "inputs": [
+    { "readingTag": "ROFeedFlowRate", "coefficient": 0.008 },
+    { "readingTag": "ROFeed_pH", "coefficient": -0.3 }
+  ]
+}
+
+### Then for each new formula id (use the ids returned above):
+PUT http://localhost:8080/api/formulas/5/approve
+Content-Type: application/json
+
+{
+  "approvedBy": "wes"
+}
+
+###
+PUT http://localhost:8080/api/formulas/5/activate
+
+### Once all 5 are ACTIVE, confirm with:
+GET http://localhost:8080/api/formulas
