@@ -45,6 +45,12 @@ Full example requests, including creating and activating all five chemical types
 
 **Requires:** Java 25, MySQL 8, Maven (wrapper included).
 
+If MySQL and an Ignition Gateway are already installed as local services and `DB_USERNAME`/`DB_PASSWORD` are already set as environment variables, `start-demo.ps1` brings up the whole stack, MySQL, the API, the simulator, and a check on the Gateway, in the right order with readiness checks between each step, and opens the Gateway in your browser when it's done:
+```
+.\start-demo.ps1
+```
+Otherwise, to set up and run each piece individually:
+
 1. Create a MySQL 8 database named `adaptive_dosing_control` and load the structure from [schema.sql](schema.sql), then set credentials as environment variables (never committed):
    ```
    DB_USERNAME=<your MySQL user>
