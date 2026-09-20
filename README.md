@@ -64,7 +64,7 @@ Full example requests, including creating and activating all five chemical types
    ```
    Exposes 32 holding registers over Modbus TCP on `localhost:5020`, modeling the pumps, QC readings, and the RO feed tank described in the case study, including periodic upstream disruptions that actually drain the tank. Connect an Ignition Gateway to it over Modbus TCP for the live process view, and to this API's endpoints above for formula data and alarm/reading write-back.
 
-**Note on the Ignition/Perspective layer:** the SCADA layer described in the architecture above runs in a local Ignition Gateway and isn't in this repository. A Gateway backup (`.gwbk`) is a large, opaque binary, not something a reviewer can meaningfully browse on GitHub. A cleaner, human-readable export of the Perspective views, tag configuration, and control-loop scripts is planned as a follow-up addition.
+**Note on the Ignition/Perspective layer:** the SCADA layer described in the architecture above runs in a local Ignition Gateway and isn't in this repository's source tree, a Gateway backup is a large binary, not something readable in a GitHub file view. A full Gateway backup is available as a downloadable asset on the [Releases page](https://github.com/weslysmith863/DosingControl/releases/tag/v0.1-demo), restore it into a local Ignition Gateway (Maker Edition works free) to see the Perspective UI, tags, and control-loop scripts directly. It connects to its own dedicated, low-privilege demo database credential, not a production system. A human-readable export of the same project resources (Perspective views, tag configuration, and scripts as plain JSON/Python) is planned as a follow-up addition for anyone who wants to skim rather than restore.
 
 ## Tech stack
 
