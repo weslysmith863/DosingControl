@@ -30,17 +30,15 @@ The RO feed holding tank exists because without it, small upstream flow fluctuat
 
 ## The Control Logic
 
-Three automatic loops run continuously off live tag values. There is no operator launch step, because the real system does not have one either:
+Two mechanisms run continuously off live tag values. There is no operator launch step, because the real system does not have one either:
 
-**Loop 1, pretreatment dosing.** Reads QC1 (raw water quality), calculates coagulant and SH dose from the active dosing formulas, and writes both to their pump setpoint tags.
+**The dosing calculation loop.** One generic Gateway script runs for all five chemical types, coagulant, sodium hypochlorite, neutralizer, antiscalant, and caustic, not five separate hardcoded loops. For each one, it calls the enterprise API for that chemical's currently active formula, reads the live QC and process tags that formula depends on, calculates the dose, clamps it to the formula's min/max, and writes the pump's setpoint. The same mechanism runs identically whether the formula behind it is carefully tuned or a placeholder, see Judgment Calls below for which is which.
 
-**Loop 2, pre-RO membrane protection.** Reads QC2, specifically the chlorine and ORP residual carried over from the SH dose, calculates the neutralizer dose from the active formula, and writes it to the pump setpoint tag. This loop exists purely to protect the membranes downstream.
-
-**Loop 3, RO feed stabilization.** The RO feed pump draws from the holding tank instead of directly off the filtration and dosing stage, so short upstream flow dips never reach the RO. A low tank level interlock holds or alarms the feed pump if the tank runs low, rather than letting the RO itself trip on low flow.
+**RO feed stabilization.** The RO feed pump draws from the holding tank instead of directly off the filtration and dosing stage, so short upstream flow dips never reach the RO. A low tank level interlock holds or alarms the feed pump if the tank runs low, rather than letting the RO itself trip on low flow.
 
 ## The Adaptive Part
 
-Nothing in this system has an operator picking a recipe. What actually governs the three control loops is a set of versioned dosing formulas, for example Coagulant Curve v2, SH Dose Curve v1, and Neutralizer Curve v3, that get defined and approved in the enterprise layer. Ignition always executes whichever version is currently active. The intent is that engineers tune these formulas over time based on the water quality and compliance data the system is collecting, then approve a new active version, so better data in produces better tuned formulas out and measurably better compliance numbers over time. That tuning loop is where the platform's name comes from.
+Nothing in this system has an operator picking a recipe. What actually governs the dosing calculation loop is a set of versioned dosing formulas, one per chemical, for example Coagulant Curve v2, SH Dose Curve v1, and Neutralizer Curve v3, that get defined and approved in the enterprise layer. Ignition always executes whichever version is currently active. The intent is that engineers tune these formulas over time based on the water quality and compliance data the system is collecting, then approve a new active version, so better data in produces better tuned formulas out and measurably better compliance numbers over time. That tuning loop is where the platform's name comes from.
 
 The data moves both directions. Down, an engineer tunes and approves a formula version in the Spring Boot app, Ignition pulls the active formula, and its control loop scripts continuously evaluate it against live QC readings to calculate real time setpoints. Ignition continuously logs QC1, QC2, and QC3 readings, actual dosing rates, and which formula version was active, back to MySQL as the compliance record, while alarm events (chlorine breakthrough risk, pump fault, RO differential pressure high, tank level low) log through Ignition's built-in Alarm Journal to the same database and surface live on the Perspective HMI's alarm log.
 
@@ -53,6 +51,8 @@ A few decisions in this project were deliberate, and I think they are worth expl
 **I am calling the enterprise layer a model of the ISA-95 boundary, not a full MES.** It would be tempting to oversell the Spring Boot layer as a manufacturing execution system, since that sounds more impressive. It is not one. It does not do scheduling, genealogy, or multi-site coordination. What it actually does, cleanly, is formula versioning and approval plus the quality and alarm record, which is a real and specific slice of what an MES does at the enterprise-to-control boundary. I would rather a technical interviewer confirm I know exactly what I built than catch me overselling it.
 
 **I invested real time making the simulator argue for itself.** A dosing calculation that is just a straight line from quality reading to setpoint reads as a toy to anyone who has done real control work. So the simulator includes flow pacing rather than quality-only dosing, dead time between a setpoint change and the process responding, and sensor noise. None of that was strictly necessary to make the demo run. It was necessary to make the control loop math hold up under a real technical follow-up question.
+
+**I built one dosing engine for all five chemicals, and I only tuned one of them.** The dosing calculation loop is intentionally chemical-agnostic, it runs identically for coagulant, SH, neutralizer, antiscalant, and caustic, driven entirely by whichever formula is active for that chemical. Coagulant is the one formula I actually reasoned through against realistic process behavior. The other four run through that same live mechanism with placeholder coefficients, which proves the engine generalizes, it does not stand in for tuned production values. I would rather be specific about which is which than let five running pumps imply five finished formulas.
 
 ## Tech Stack
 
