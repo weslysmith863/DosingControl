@@ -45,12 +45,11 @@ Full example requests, including creating and activating all five chemical types
 
 **Requires:** Java 25, MySQL 8, Maven (wrapper included).
 
-1. Create the database and set credentials as environment variables (never committed):
+1. Create a MySQL 8 database named `adaptive_dosing_control` and load the structure from [schema.sql](schema.sql), then set credentials as environment variables (never committed):
    ```
    DB_USERNAME=<your MySQL user>
    DB_PASSWORD=<your MySQL password>
    ```
-   The app expects a database named `adaptive_dosing_control` at `localhost:3306` (see `application.properties`).
 
 2. Run the API:
    ```
@@ -58,7 +57,14 @@ Full example requests, including creating and activating all five chemical types
    ```
    Starts on `localhost:8080`.
 
-3. (Optional, for the full simulated process) Run the Python Modbus simulator and connect an Ignition Gateway to it over Modbus TCP on port 5020, and to this API's endpoints above for formula data and alarm/reading write-back.
+3. (Optional, for the full simulated process) Run the Modbus simulator:
+   ```
+   pip install -r simulator/requirements.txt
+   python simulator/simulator.py
+   ```
+   Exposes 32 holding registers over Modbus TCP on `localhost:5020`, modeling the pumps, QC readings, and the RO feed tank described in the case study, including periodic upstream disruptions that actually drain the tank. Connect an Ignition Gateway to it over Modbus TCP for the live process view, and to this API's endpoints above for formula data and alarm/reading write-back.
+
+**Note on the Ignition/Perspective layer:** the SCADA layer described in the architecture above runs in a local Ignition Gateway and isn't in this repository. A Gateway backup (`.gwbk`) is a large, opaque binary, not something a reviewer can meaningfully browse on GitHub. A cleaner, human-readable export of the Perspective views, tag configuration, and control-loop scripts is planned as a follow-up addition.
 
 ## Tech stack
 
