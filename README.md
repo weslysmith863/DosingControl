@@ -24,7 +24,7 @@ DRAFT --approve--> APPROVED --activate--> ACTIVE --(next version activated)--> R
 
 Activating a new formula for a chemical automatically retires whatever was previously active for that same chemical, inside one transaction, so there is never more than one active formula per chemical at a time and every past version stays in the table as a permanent audit record.
 
-**Scope note:** the schema supports five chemical types (`COAGULANT`, `SH`, `SBS`, `ANTISCALANT`, `CAUSTIC`) so the calculation loop generalizes across every dosing point in the process. Only `COAGULANT` currently has a formula tuned against realistic process behavior; the other four are seeded with arbitrary placeholder coefficients (see `requests.http`) to exercise the full five-pump calculation path end to end, not to represent tuned production values.
+**Scope note:** all five chemical types (`COAGULANT`, `SH`, `SBS`, `ANTISCALANT`, `CAUSTIC`) run live through the same generic Gateway timer script (`DosingCalcLoop`), which loops over every chemical type, calls this API's `/api/formulas/active/{chemicalType}` endpoint, calculates the dose from the active formula plus live tag readings, and writes the setpoint, one script, not five duplicated ones. Only `COAGULANT` currently has a formula tuned against realistic process behavior; the other four are seeded with arbitrary placeholder coefficients (see `requests.http`), so the values they produce are real and live, just not representative of tuned production dosing.
 
 ## API
 
